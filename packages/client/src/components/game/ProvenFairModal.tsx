@@ -1,0 +1,1 @@
+export { ProvenFairModal } from './components';

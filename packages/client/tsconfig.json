@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target":                   "ES2022",
+    "lib":                      ["ES2022", "DOM", "DOM.Iterable"],
+    "module":                   "ESNext",
+    "moduleResolution":         "bundler",
+    "jsx":                      "react-jsx",
+    "strict":                   true,
+    "noUnusedLocals":           true,
+    "noUnusedParameters":       true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck":             true,
+    "esModuleInterop":          true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule":        true,
+    "outDir":                   "./dist",
+    "rootDir":                  "./src",
+    // Type-check only: Vite owns the emit, and letting `tsc` (run as the first
+    // half of `npm run build`) write JS into ./dist risked stale files being
+    // picked up alongside the bundle.
+    "noEmit":                    true,
+    // The self-contained verification scripts under src/lib import each other
+    // with explicit `.ts` extensions so `node --experimental-strip-types` can
+    // run them without a bundler. That is only legal together with noEmit.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

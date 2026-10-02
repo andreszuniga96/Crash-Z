@@ -1,0 +1,262 @@
+/* ═══════════════════════════════════════════════════════════
+   ZombieRun Crash — Global CSS + Tailwind entry point
+
+   ORDER MATTERS:
+   1. @import must come first (CSS spec).
+   2. @tailwind directives follow.
+   3. Custom CSS goes inside @layer so Tailwind utilities can
+      still override it (utilities beat components in v3).
+
+   NOTE: this file previously defined its own `.text-sm`, `.text-xl`,
+   `.font-bold`, `.animate-pulse`, ... utilities, which silently collide
+   with Tailwind's generated classes. Those were removed — Tailwind now
+   owns every typography/animation utility.
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens ──────────────────────────────────────────── */
+@layer base {
+  :root {
+    --c-bg:          #000208;
+    --c-surface:     rgba(6, 10, 20, 0.88);
+    --c-surface-2:   rgba(12, 18, 35, 0.92);
+    --c-border:      rgba(255, 255, 255, 0.07);
+    --c-text:        #e8ecf4;
+    --c-text-muted:  #6b7a99;
+    --c-accent:      #ff3333;
+    --c-accent-2:    #ff6600;
+    --c-success:     #22c55e;
+    --c-warning:     #f59e0b;
+    --c-danger:      #ef4444;
+    --c-gold:        #fbbf24;
+
+    --font-body: 'Outfit', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Prevent iOS rubber-band scrolling and double-tap zoom on the game UI */
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
+  /* Disable the tap highlight that makes buttons look broken on Android */
+  button, input, select {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ── Components ─────────────────────────────────────────────── */
+@layer components {
+  /* Glassmorphism panel — the base surface for every HUD card */
+  .panel {
+    background: var(--c-surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--c-border);
+    border-radius: 1rem;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(255,255,255,0.03) inset,
+      0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #ff3333 0%, #ff6600 100%);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 51, 51, 0.35);
+  }
+  .btn-primary:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(255, 51, 51, 0.55);
+  }
+  .btn-primary:not(:disabled):active { transform: translateY(0); }
+
+  .btn-success {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+  }
+  .btn-success:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.55);
+  }
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+  }
+  .btn-ghost:not(:disabled):hover { background: rgba(255, 255, 255, 0.1); }
+
+  .input {
+    width: 100%;
+    padding: 0.6rem 0.875rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--c-border);
+    border-radius: 0.75rem;
+    color: var(--c-text);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input:focus { border-color: rgba(255, 51, 51, 0.5); }
+  .input::placeholder { color: var(--c-text-muted); }
+
+  /* Hide the number input spinners — they break the compact bet field */
+  .input[type='number']::-webkit-outer-spin-button,
+  .input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .input[type='number'] { -moz-appearance: textfield; }
+
+  /* ── Multiplier readout ─────────────────────────────────────
+     Uses a SOLID colour plus text-shadow glow.
+
+     The previous implementation used a gradient with
+     `background-clip: text` together with `filter: drop-shadow()`.
+     That combination renders as a filled gradient RECTANGLE in
+     Chromium — the filter creates a new rendering context and the
+     background is no longer clipped to the glyphs. text-shadow
+     produces the same glow without needing a filter at all, and is
+     markedly cheaper to paint on mobile GPUs. */
+  .multiplier-text {
+    font-family: var(--font-mono);
+    font-weight: 900;
+    line-height: 1;
+    color: #ff6a1f;
+    text-shadow:
+      0 0 14px rgba(255, 90, 20, 0.85),
+      0 0 40px rgba(255, 70, 0, 0.45);
+  }
+  .multiplier-text--crashed {
+    color: #ef4444;
+    text-shadow:
+      0 0 14px rgba(239, 68, 68, 0.9),
+      0 0 40px rgba(239, 68, 68, 0.5);
+  }
+  .multiplier-text--idle {
+    color: #6b7a99;
+    text-shadow: none;
+  }
+
+  /* ── Live payout readout ─────────────────────────────────────
+     Same solid-colour + text-shadow strategy as .multiplier-text,
+     for the same reason (a gradient with background-clip: text
+     renders as a filled rectangle as soon as a filter is involved).
+
+     tabular-nums is not cosmetic: the money counter repaints on every
+     animation frame, and proportional digits would make the number
+     jitter sideways as it climbs. The glow is set inline by the
+     component, which is the only place that knows the multiplier. */
+  .payout-text {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    transition: text-shadow 0.2s linear;
+  }
+}
+
+/* ── Scrollbar (thin, for panels with overflow) ─────────────── */
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+
+  /* Faint scrollbar for scrollable lists */
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+  }
+}
+
+/* ── Connection status dot ──────────────────────────────────── */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.status-dot.connected    { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.status-dot.connecting   { background: #f59e0b; animation: breathe 1s ease-in-out infinite; }
+.status-dot.disconnected { background: #ef4444; }
+
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ── Win-celebration animations ─────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+  80%  { opacity: 0.7; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes winCardPop {
+  0%   { transform: scale(0.6) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0);       opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Shake animation (crash) ─────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px) rotate(-1deg); }
+  40%      { transform: translateX(6px) rotate(1deg); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
