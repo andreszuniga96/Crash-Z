@@ -1,20 +1,33 @@
-﻿{
-  "buildCommand": "npm run build --prefix packages/client",
-  "outputDirectory": "packages/client/dist",
-  "installCommand": "npm install",
-  "framework": null,
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "client": {
+      "root": "packages/client",
+      "framework": "vite"
+    },
+    "server": {
+      "root": "packages/server",
+      "framework": "express"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend-url.railway.app/api/$1"
+      "destination": {
+        "service": "server"
+      }
     },
     {
       "source": "/socket.io/(.*)",
-      "destination": "https://your-backend-url.railway.app/socket.io/$1"
+      "destination": {
+        "service": "server"
+      }
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": {
+        "service": "client"
+      }
     }
   ],
   "headers": [
